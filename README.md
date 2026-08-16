@@ -107,13 +107,13 @@ check types  contains_any=1  json_field_equals=6  max_words=2  not_contains=2  r
 tags         account=1  ambiguous=1  billing=3  policy=1  robustness=1  sales=1  sso=1  technical=1
 ```
 
-Score a run against the suite. You can pass `--prices` for cost calculation and `--min-score <percent>` to gate CI by exiting non-zero when the score falls below a threshold:
+Score a run against the suite. The run file shipped here is hand-written output used to
+exercise the scorer, and the report says so:
 
 ```bash
 python3 -m beval score suites/support-triage/suite.json \
                       tests/fixtures/runs/support-triage-fixture.json \
-                      --prices tests/fixtures/prices-fixture.json \
-                      --min-score 80
+                      --prices tests/fixtures/prices-fixture.json
 ```
 
 ```
@@ -138,6 +138,24 @@ cost     $6.027000  (prices read 2026-08-16 from https://example.invalid/not-a-r
 
 Those token counts, latencies and rates are invented for the arithmetic — see the `note`
 field in both fixture files. Nothing in this repository has been measured yet.
+
+Without `--min-score`, that command exits `0` — a suite where every case failed still reports
+`score 0.0%` and returns success, which is useless as a CI gate. Pass a threshold to make the
+exit code follow the score:
+
+```bash
+python3 -m beval score suites/support-triage/suite.json \
+                      tests/fixtures/runs/support-triage-fixture.json \
+                      --min-score 80
+```
+
+```
+score 66.7% is below the required minimum of 80.0%
+```
+
+The report still prints in full on stdout; the line above goes to stderr and the command exits
+`1`. A threshold outside `0..100` is a usage error and exits `2` rather than being clamped. A
+case with no response in the run file is still an error on its own, with or without the flag.
 
 Run the tests the same way CI does:
 
