@@ -9,13 +9,18 @@ format itself may still change. Any change to it will appear here with the migra
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-17
+
+The runner, and still no model call from this project. Every number in the repository comes
+from a committed fixture or a committed record, and the report says so wherever it appears.
+Calling a model is the user's own run, on the user's own account.
+
 ### Added
 
 - `beval.request` — builds the body of a Bedrock Converse call from one case and the
   suite's `defaults`, as a pure function with no client and no credentials. The field
   mapping is documented in [`docs/converse-request.md`](docs/converse-request.md) and read
-  from the API reference on 2026-08-16, not from memory. Still no model call: this decides
-  what would be sent, and the runner that sends it is not written yet.
+  from the API reference on 2026-08-16, not from memory.
 - `beval run` — asks every case in a suite, writes a run file, and optionally a **record**
   holding the raw request and response for every case. `--replay <record>` answers from a
   record instead of calling a model, so a run made once on an account stays reproducible
@@ -68,5 +73,6 @@ one.
 - The Bedrock runner. Recording real responses is the next piece, and the only one that
   needs credentials.
 
-[Unreleased]: https://github.com/vinhnguyenthanhdn/bedrock-eval-harness/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/vinhnguyenthanhdn/bedrock-eval-harness/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/vinhnguyenthanhdn/bedrock-eval-harness/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vinhnguyenthanhdn/bedrock-eval-harness/releases/tag/v0.1.0
