@@ -260,8 +260,10 @@ class RecordedClient:
         self.calls.append((model_id, body))
         exchange = self._find(body)
         if exchange.request != body:
+            # No case id in the message: every caller that catches this already has the
+            # case in hand and prefixes it, and printing it twice reads like a bug.
             raise RecordMismatch(
-                f"{exchange.case_id}: the recorded request differs from the one being replayed;"
+                "the recorded request differs from the one being replayed;"
                 " re-record the run or restore the suite settings it was recorded with"
             )
         return exchange.response
