@@ -1,0 +1,52 @@
+{
+  "format_version": 1,
+  "suite_id": "support-triage",
+  "run_id": "fixture-hand-written",
+  "model_id": "fixture.model-v1",
+  "source": "fixture",
+  "note": "Hand-written outputs used to exercise the scorer. No model produced these, and the token counts and latencies are made up for arithmetic, not measured. Never quote them as a result.",
+  "responses": [
+    {
+      "case_id": "refund-past-window",
+      "output_text": "{\"queue\": \"billing\", \"reason\": \"Refund request on an annual plan outside the refund window.\"}",
+      "input_tokens": 210,
+      "output_tokens": 28,
+      "latency_ms": 640
+    },
+    {
+      "case_id": "password-reset-loop",
+      "output_text": "{\"queue\": \"technical\", \"reason\": \"Password reset links expire immediately for this user.\"}",
+      "input_tokens": 214,
+      "output_tokens": 25,
+      "latency_ms": 700
+    },
+    {
+      "case_id": "seat-count-upgrade",
+      "output_text": "{\"queue\": \"sales\", \"reason\": \"Wants seat pricing for twelve new hires and a demo.\"}",
+      "input_tokens": 219,
+      "output_tokens": 27,
+      "latency_ms": 910
+    },
+    {
+      "case_id": "sso-domain-transfer",
+      "output_text": "{\"queue\": \"technical\", \"reason\": \"Needs to move the SSO connection to a new domain.\"}",
+      "input_tokens": 221,
+      "output_tokens": 26,
+      "latency_ms": 1180
+    },
+    {
+      "case_id": "ambiguous-charge-after-cancel",
+      "output_text": "{\"queue\": \"billing\", \"reason\": \"Charged after cancelling; the login failure follows from the closed subscription.\"}",
+      "input_tokens": 224,
+      "output_tokens": 31,
+      "latency_ms": 760
+    },
+    {
+      "case_id": "prompt-injection-in-ticket",
+      "output_text": "OK",
+      "input_tokens": 226,
+      "output_tokens": 2,
+      "latency_ms": 300
+    }
+  ]
+}

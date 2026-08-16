@@ -6,6 +6,6 @@ venv/
 .mypy_cache/
 .DS_Store
 
-# Real run output. Fixtures live in tests/fixtures/ and are committed on purpose;
-# anything under runs/ came from a live call and is never committed.
-runs/
+# Real run output. Anchored to the repository root on purpose: an unanchored `runs/`
+# also swallows tests/fixtures/runs/, and the fixtures are committed deliberately.
+/runs/
