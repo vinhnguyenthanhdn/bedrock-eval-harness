@@ -86,3 +86,17 @@ A threshold outside `0..100` is a usage error: the command exits `2` and scores 
 
 Without the flag the behaviour is unchanged — `beval score` exits `0` as long as every case has a response, even when every one of them failed. That is why the flag exists.
 
+
+## Comparing two runs
+
+`beval compare <suite> <baseline> <candidate>` scores both files against the same suite and reports which cases changed verdict. Both runs are read the same way `score` reads them, so everything above about missing responses and fixture labelling still applies.
+
+Rules the diff follows:
+
+- **Only cases with a verdict on both sides can flip.** A case answered in one run and not the other is reported as `dropped` or `added`, never as a regression. Calling an unanswered case a regression would invent a result the run does not contain.
+- **Case order comes from the suite**, not from the order responses happen to appear in either file. Two runs of the same thing produce the same report, so a diff of two reports shows only what actually changed.
+- **The score delta is printed last.** Cases first, totals after — an unchanged percentage routinely hides a case lost and a case gained of equal weight, which is the failure this command exists to catch.
+- **A fixture compared against a recorded call is flagged in the report.** That diff measures the person who wrote the fixture against a model, and it looks identical to a model-versus-model comparison unless the report says so.
+- **Cost is printed only when the price list covers both models.** Otherwise the report names the model it has no rate for and prints no dollar figure, because one side's cost shown next to a blank reads as a delta.
+
+`--fail-on-regression` exits `1` when any case passed in the baseline and fails in the candidate, regardless of the totals. Without it, `compare` reports and exits `0`.

@@ -1,9 +1,11 @@
 """Command line entry point.
 
-Two commands today, both offline:
+Every command here is offline:
 
-    beval validate <suite.json> [...]   check a suite against the format
-    beval show <suite.json>            print what the suite measures
+    beval validate <suite.json> [...]           check a suite against the format
+    beval show <suite.json>                     print what the suite measures
+    beval score <suite.json> <run.json>         score one run, with tokens and cost
+    beval compare <suite.json> <a.json> <b.json>  show which cases changed verdict
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Sequence
 
+from .compare import compare_scored
 from .ledger import load_prices, percentile, score_run
 from .runfile import load_run
 from .suite import Suite, load_suite
@@ -48,6 +51,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="minimum score percentage (0..100) required to exit 0",
     )
 
+    p_compare = sub.add_parser(
+        "compare",
+        help="show which cases changed verdict between two runs of the same suite",
+    )
+    p_compare.add_argument("suite", type=Path)
+    p_compare.add_argument("baseline", type=Path, help="the run you are comparing against")
+    p_compare.add_argument("candidate", type=Path, help="the newer run")
+    p_compare.add_argument(
+        "--prices",
+        type=Path,
+        help="price list to turn tokens into dollars; without it the report shows tokens only",
+    )
+    p_compare.add_argument(
+        "--fail-on-regression",
+        action="store_true",
+        help="exit 1 when any case passed in the baseline and fails in the candidate",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -56,6 +77,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _cmd_show(args.path)
     if args.command == "score":
         return _cmd_score(args.suite, args.run, args.prices, args.min_score)
+    if args.command == "compare":
+        return _cmd_compare(
+            args.suite,
+            args.baseline,
+            args.candidate,
+            args.prices,
+            args.fail_on_regression,
+        )
     return 2
 
 
@@ -209,6 +238,135 @@ def _cmd_score(
             return 1
 
     return 0 if not scored.missing_case_ids else 1
+
+
+def _cmd_compare(
+    suite_path: Path,
+    baseline_path: Path,
+    candidate_path: Path,
+    prices_path: Path | None,
+    fail_on_regression: bool,
+) -> int:
+    suite, problems = load_suite(suite_path)
+    if suite is None:
+        _print_problems(suite_path, problems)
+        return 1
+
+    runs = []
+    for path in (baseline_path, candidate_path):
+        run, problems = load_run(path)
+        if run is None:
+            _print_problems(path, problems)
+            return 1
+        if run.suite_id != suite.suite_id:
+            print(
+                f"{path}: recorded against suite {run.suite_id!r}, not {suite.suite_id!r}",
+                file=sys.stderr,
+            )
+            return 1
+        runs.append(run)
+    baseline_run, candidate_run = runs
+
+    prices = None
+    if prices_path is not None:
+        prices, problems = load_prices(prices_path)
+        if prices is None:
+            _print_problems(prices_path, problems)
+            return 1
+
+    diff = compare_scored(score_run(suite, baseline_run), score_run(suite, candidate_run))
+
+    print(f"suite     {suite.suite_id}")
+    print(f"baseline  {baseline_run.run_id}  model={baseline_run.model_id}  ({baseline_run.source})")
+    print(f"candidate {candidate_run.run_id}  model={candidate_run.model_id}  ({candidate_run.source})")
+    if diff.compares_fixture_with_measurement:
+        # Loud, because the numbers underneath look exactly like a model comparison.
+        print()
+        print(
+            "warning   one side is hand-written output and the other is a recorded call; "
+            "this diff shows the difference between a fixture and a measurement, not "
+            "between two models"
+        )
+    print()
+
+    ids = (
+        diff.regressed
+        + diff.fixed
+        + diff.scored_only_in_baseline
+        + diff.scored_only_in_candidate
+        + diff.missing_from_both
+    )
+    width = max([len("case")] + [len(case_id) for case_id in ids] or [4])
+
+    candidate_failures = {result.case_id: result for result in diff.candidate.results}
+    baseline_failures = {result.case_id: result for result in diff.baseline.results}
+
+    for case_id in diff.regressed:
+        print(f"REGRESSED  {case_id:<{width}}  passed before, fails now")
+        for check in candidate_failures[case_id].failures:
+            print(f"        └ {check.name}: {check.detail}")
+    for case_id in diff.fixed:
+        print(f"fixed      {case_id:<{width}}  failed before, passes now")
+        for check in baseline_failures[case_id].failures:
+            print(f"        └ was: {check.name}: {check.detail}")
+    for case_id in diff.scored_only_in_baseline:
+        print(f"dropped    {case_id:<{width}}  no response in the candidate run — not compared")
+    for case_id in diff.scored_only_in_candidate:
+        print(f"added      {case_id:<{width}}  no response in the baseline run — not compared")
+    for case_id in diff.missing_from_both:
+        print(f"MISS       {case_id:<{width}}  neither run answered it")
+
+    if not diff.regressed and not diff.fixed:
+        print(f"no case changed verdict  ({diff.comparable_case_count} compared)")
+
+    print()
+    print(
+        f"unchanged {len(diff.still_passing)} passing, {len(diff.still_failing)} failing "
+        f"of {diff.comparable_case_count} comparable"
+    )
+
+    before, after = diff.baseline.score * 100, diff.candidate.score * 100
+    print(f"score     {before:.1f}% → {after:.1f}%  ({diff.score_delta * 100:+.1f} points)")
+    print(
+        f"tokens    in {diff.baseline.input_tokens} → {diff.candidate.input_tokens}  "
+        f"out {diff.baseline.output_tokens} → {diff.candidate.output_tokens}"
+    )
+
+    base_p50 = percentile(diff.baseline.latencies, 0.5)
+    cand_p50 = percentile(diff.candidate.latencies, 0.5)
+    if base_p50 is None or cand_p50 is None:
+        print("latency   not recorded on both sides")
+    else:
+        print(f"latency   p50 {base_p50:.0f} ms → {cand_p50:.0f} ms")
+
+    base_cost = diff.baseline.cost_usd(prices)
+    cand_cost = diff.candidate.cost_usd(prices)
+    if prices is None:
+        print("cost      no price list given (--prices)")
+    elif base_cost is None or cand_cost is None:
+        unpriced = [
+            run.model_id
+            for run, cost in ((baseline_run, base_cost), (candidate_run, cand_cost))
+            if cost is None
+        ]
+        # Naming them matters: comparing a priced model against an unpriced one and
+        # printing one number would read as a cost delta.
+        print(f"cost      no price for {', '.join(repr(m) for m in unpriced)} in the price list")
+    else:
+        print(
+            f"cost      ${base_cost:.6f} → ${cand_cost:.6f}  "
+            f"(prices read {prices.read_on} from {prices.source_url})"
+        )
+
+    if fail_on_regression and diff.has_regression:
+        print(
+            f"{len(diff.regressed)} case(s) passed in {baseline_run.run_id} and fail in "
+            f"{candidate_run.run_id}: {', '.join(diff.regressed)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    return 0
 
 
 def _print_problems(path: Path, problems: list[str]) -> None:

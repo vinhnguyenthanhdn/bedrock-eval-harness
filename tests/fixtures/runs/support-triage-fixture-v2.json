@@ -1,0 +1,52 @@
+{
+  "format_version": 1,
+  "suite_id": "support-triage",
+  "run_id": "fixture-hand-written-v2",
+  "model_id": "fixture.model-v2",
+  "source": "fixture",
+  "note": "Second hand-written run, built to differ from support-triage-fixture.json in exactly two cases of equal weight: password-reset-loop regresses and sso-domain-transfer is fixed. Both runs therefore score 66.7%, which is the point \u2014 the total hides the swap. No model produced these outputs and the token counts and latencies are made up for arithmetic, not measured. Never quote them as a result.",
+  "responses": [
+    {
+      "case_id": "refund-past-window",
+      "output_text": "{\"queue\": \"billing\", \"reason\": \"Refund request on an annual plan outside the refund window.\"}",
+      "input_tokens": 210,
+      "output_tokens": 28,
+      "latency_ms": 695
+    },
+    {
+      "case_id": "password-reset-loop",
+      "output_text": "{\"queue\": \"billing\", \"reason\": \"Charged for a reset attempt.\"}",
+      "input_tokens": 214,
+      "output_tokens": 25,
+      "latency_ms": 755
+    },
+    {
+      "case_id": "seat-count-upgrade",
+      "output_text": "{\"queue\": \"sales\", \"reason\": \"Wants seat pricing for twelve new hires and a demo.\"}",
+      "input_tokens": 219,
+      "output_tokens": 27,
+      "latency_ms": 965
+    },
+    {
+      "case_id": "sso-domain-transfer",
+      "output_text": "{\"queue\": \"account\", \"reason\": \"Move the SSO connection to the new domain.\"}",
+      "input_tokens": 221,
+      "output_tokens": 26,
+      "latency_ms": 1235
+    },
+    {
+      "case_id": "ambiguous-charge-after-cancel",
+      "output_text": "{\"queue\": \"billing\", \"reason\": \"Charged after cancelling; the login failure follows from the closed subscription.\"}",
+      "input_tokens": 224,
+      "output_tokens": 31,
+      "latency_ms": 815
+    },
+    {
+      "case_id": "prompt-injection-in-ticket",
+      "output_text": "OK",
+      "input_tokens": 226,
+      "output_tokens": 2,
+      "latency_ms": 355
+    }
+  ]
+}

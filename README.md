@@ -14,17 +14,17 @@ settings, scores and cost side by side with the run before it.
 
 ## Status
 
-Early. Everything that does not need an AWS account is in place: the case suite format,
-its validator, and the scorer with its cost and latency ledger, exercised against
-committed fixtures.
+Early. Everything that does not need an AWS account is in place: the case suite format, its
+validator, the scorer with its cost and latency ledger, and the run-to-run comparison — all
+exercised against committed fixtures.
 
 | Piece | State |
 |---|---|
 | Case suite format (input + pass criteria) | **done** — [`docs/case-format.md`](docs/case-format.md) |
 | Suite validator and CLI (`validate`, `show`) | **done** |
 | Scorer, and the cost/latency ledger, on run files | **done** — scored against committed fixtures |
-| Bedrock runner and response recording | next, needs an account with Bedrock enabled |
-| Comparing two runs | after that |
+| Comparing two runs case by case (`compare`) | **done** — diffed against committed fixtures |
+| Bedrock runner and response recording | next, and the only piece that needs credentials |
 
 There are no benchmark numbers in this README because no model has been called yet.
 When there are, they will come from a recorded run committed to the repo, with the date
@@ -48,6 +48,8 @@ and the price list used.
   never be quoted as a measurement.
 - **Unknown fields are rejected.** A misspelled key in a check is a check that silently
   stops testing what it claims to test.
+- **Two runs are compared case by case**, not by their totals, because an unchanged score
+  can hide a case lost and a case gained.
 
 ## Architecture
 
@@ -70,7 +72,8 @@ The suite is the only hand-written input. Everything to its right is derived and
 regenerated, which is what makes two runs comparable: they were produced from the same
 contract, not from two terminal sessions.
 
-The right-hand half of that diagram is not implemented yet — see **Status** above.
+The runner box is the only one not implemented yet — see **Status** above. Everything
+downstream of `responses` works today on committed fixtures.
 
 ## Quick Start
 
@@ -157,6 +160,44 @@ The report still prints in full on stdout; the line above goes to stderr and the
 `1`. A threshold outside `0..100` is a usage error and exits `2` rather than being clamped. A
 case with no response in the run file is still an error on its own, with or without the flag.
 
+### Comparing two runs
+
+A score answers "did it get better", and that is the question that hides the answer you need.
+`compare` scores two runs against the same suite and reports which **cases** changed verdict:
+
+```bash
+python3 -m beval compare suites/support-triage/suite.json \
+                        tests/fixtures/runs/support-triage-fixture.json \
+                        tests/fixtures/runs/support-triage-fixture-v2.json \
+                        --prices tests/fixtures/prices-fixture.json
+```
+
+```
+suite     support-triage
+baseline  fixture-hand-written  model=fixture.model-v1  (fixture)
+candidate fixture-hand-written-v2  model=fixture.model-v2  (fixture)
+
+REGRESSED  password-reset-loop  passed before, fails now
+        └ json_field_equals: queue='billing', expected 'technical'
+fixed      sso-domain-transfer  failed before, passes now
+        └ was: json_field_equals: queue='technical', expected 'account'
+
+unchanged 3 passing, 1 failing of 6 comparable
+score     66.7% → 66.7%  (+0.0 points)
+tokens    in 1314 → 1314  out 139 → 139
+latency   p50 700 ms → 755 ms
+cost      $6.027000 → $2.009000  (prices read 2026-08-16 from https://example.invalid/not-a-real-price-list)
+```
+
+The two shipped fixtures are built to make the point: identical score, one case lost and one
+case gained. On the report above, the swap is the first thing you see and `+0.0 points` is the
+last. Nothing about `66.7% → 66.7%` tells you the model stopped routing password problems to
+the technical queue.
+
+`--fail-on-regression` exits `1` when any case passed in the baseline and fails in the
+candidate, whatever the totals did. That is the flag for a pipeline that must not ship a
+prompt change which trades a case away for two cheaper ones.
+
 Run the tests the same way CI does:
 
 ```bash
@@ -195,8 +236,8 @@ documented in [`docs/run-format.md`](docs/run-format.md).
 
 ## Limitations
 
-- **No model has been called yet.** The runner and the comparison step are not written, and
-  every number in this repository comes from a committed fixture, not from a measurement.
+- **No model has been called yet.** The runner is not written, and every number in this
+  repository comes from a committed fixture, not from a measurement.
 - **Only machine-decidable checks.** Tone, helpfulness and factual accuracy against an
   open-ended answer are out of reach here by design. If a quality needs a judge model to
   score it, this harness will not score it.

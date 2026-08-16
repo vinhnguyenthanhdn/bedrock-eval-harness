@@ -7,6 +7,10 @@
     "fixture.model-v1": {
       "input_per_1k_usd": 3.0,
       "output_per_1k_usd": 15.0
+    },
+    "fixture.model-v2": {
+      "input_per_1k_usd": 1.0,
+      "output_per_1k_usd": 5.0
     }
   }
 }
