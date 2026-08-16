@@ -16,6 +16,18 @@ format itself may still change. Any change to it will appear here with the migra
   mapping is documented in [`docs/converse-request.md`](docs/converse-request.md) and read
   from the API reference on 2026-08-16, not from memory. Still no model call: this decides
   what would be sent, and the runner that sends it is not written yet.
+- `beval run` — asks every case in a suite, writes a run file, and optionally a **record**
+  holding the raw request and response for every case. `--replay <record>` answers from a
+  record instead of calling a model, so a run made once on an account stays reproducible
+  on a machine with none. A replay refuses to answer a case whose request has changed
+  since it was recorded, which is what keeps a record evidence rather than a cache; CI
+  asserts that refusal on a deliberately edited record. Format in
+  [`docs/record-format.md`](docs/record-format.md).
+- A committed record, `tests/fixtures/records/support-triage-record.json`, carrying the
+  same hand-written answers as the fixture run. A test replays it and asserts the two
+  still agree, so the runner is held to a run file written before it existed.
+- `beval.bedrock` — the only module that imports `boto3`, lazily. `boto3` is still not a
+  dependency of this project, and CI runs the whole runner path without it.
 - `beval.client` — the boundary to the SDK, `invoke(model_id, body) -> response`, plus the
   reader that turns a Converse response into a run-file record and a scripted fake client
   that returns the shapes the service returns. Reading is strict: a missing `usage` raises

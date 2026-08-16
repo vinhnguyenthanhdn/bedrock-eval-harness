@@ -62,6 +62,11 @@ responses that carried one.
 the raw Converse shapes on both sides. Below it is `boto3`, which lands with the runner;
 above it everything is pure and runs in CI without credentials.
 
+`beval.bedrock.BedrockConverseClient` is the real implementation, and the only place that
+imports `boto3`. The import is lazy and `boto3` is not a dependency of this project:
+nothing else here needs it, and CI must run without it. Credentials come from the standard
+AWS credential chain — the harness never reads a key from a suite, a run file or a flag.
+
 `ScriptedClient` is the fake used in tests. It answers from a script and records what it
 was asked, so a test can assert the request that went out and the reading of the answer
 that came back. It is not a mock of the harness's own types: it takes and returns exactly

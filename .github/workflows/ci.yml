@@ -27,6 +27,31 @@ jobs:
           python -m beval score suites/support-triage/suite.json \
             tests/fixtures/runs/support-triage-fixture.json \
             --prices tests/fixtures/prices-fixture.json
+      - name: Replay the committed record end to end
+        # The runner path with no credentials and no boto3 installed: build every request,
+        # read every recorded answer, write a run file, and score it.
+        run: |
+          python -m beval run suites/support-triage/suite.json \
+            --replay tests/fixtures/records/support-triage-record.json \
+            --out replayed-run.json
+          python -m beval score suites/support-triage/suite.json replayed-run.json
+      - name: Refuse a replay whose question changed
+        # A record is only evidence while the request still matches. Assert the refusal,
+        # not the success: a replay that answers anything is a cache, not a recording.
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p = pathlib.Path("tests/fixtures/records/support-triage-record.json")
+          record = json.loads(p.read_text())
+          record["exchanges"][0]["request"]["system"] = [{"text": "a different system prompt"}]
+          pathlib.Path("drifted-record.json").write_text(json.dumps(record))
+          PY
+          if python -m beval run suites/support-triage/suite.json \
+               --replay drifted-record.json --out /dev/null; then
+            echo "::error::replay served an answer to a question it never recorded"
+            exit 1
+          fi
+          echo "drifted replay refused, as intended"
       - name: Refuse placeholder prices
         # The guard only works if it is still wired up; assert the failure, not the success.
         run: |

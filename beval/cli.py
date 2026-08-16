@@ -1,24 +1,38 @@
 """Command line entry point.
 
-Every command here is offline:
-
     beval validate <suite.json> [...]           check a suite against the format
     beval show <suite.json>                     print what the suite measures
     beval score <suite.json> <run.json>         score one run, with tokens and cost
     beval compare <suite.json> <a.json> <b.json>  show which cases changed verdict
+    beval run <suite.json> --model <id>         ask a model, write a run file
+
+Every command except `run` is offline. `run` is offline too when given `--replay`: it
+re-asks the recorded questions and reads the recorded answers, which is how a run made on
+someone's account stays reproducible on a machine that has none.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from collections import Counter
 from pathlib import Path
 from typing import Sequence
 
+from .bedrock import BedrockConverseClient, MissingSDK
 from .compare import compare_scored
 from .ledger import load_prices, percentile, score_run
 from .runfile import load_run
+from .runner import (
+    RecordedClient,
+    RecordMismatch,
+    RunAborted,
+    load_record,
+    run_suite,
+    run_to_json,
+    write_json,
+)
 from .suite import Suite, load_suite
 
 PROGRAM = "beval"
@@ -69,6 +83,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="exit 1 when any case passed in the baseline and fails in the candidate",
     )
 
+    p_run = sub.add_parser(
+        "run",
+        help="ask every case in a suite and write a run file",
+    )
+    p_run.add_argument("suite", type=Path)
+    p_run.add_argument(
+        "--model",
+        help="model id to call, e.g. anthropic.claude-3-haiku-20240307-v1:0."
+        " Required unless --replay carries one",
+    )
+    p_run.add_argument("--region", help="AWS region; defaults to the SDK's own resolution")
+    p_run.add_argument("--run-id", help="name for this run; defaults to the model and the record")
+    p_run.add_argument("--out", type=Path, help="where to write the run file; default stdout")
+    p_run.add_argument(
+        "--record",
+        type=Path,
+        help="also write the raw requests and responses here, so the run can be replayed",
+    )
+    p_run.add_argument(
+        "--replay",
+        type=Path,
+        help="answer from a record instead of calling the model; needs no credentials",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -85,7 +123,85 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.prices,
             args.fail_on_regression,
         )
+    if args.command == "run":
+        return _cmd_run(args)
     return 2
+
+
+def _cmd_run(args) -> int:
+    suite, problems = load_suite(args.suite)
+    if suite is None:
+        _print_problems(args.suite, problems)
+        return 1
+
+    record = None
+    if args.replay is not None:
+        record, problems = load_record(args.replay)
+        if record is None:
+            _print_problems(args.replay, problems)
+            return 1
+        if record.suite_id != suite.suite_id:
+            print(
+                f"record was made against suite {record.suite_id!r}, not {suite.suite_id!r}",
+                file=sys.stderr,
+            )
+            return 1
+
+    model_id = args.model or (record.model_id if record else None)
+    if not model_id:
+        print("error: --model is required unless --replay carries one", file=sys.stderr)
+        return 2
+    if record is not None and args.model and args.model != record.model_id:
+        # Serving one model's answers under another model's name would put a wrong model
+        # id in the run file, and the model id is what the cost report prices.
+        print(
+            f"error: record holds answers from {record.model_id!r}, not {args.model!r}",
+            file=sys.stderr,
+        )
+        return 2
+
+    if record is not None:
+        client = RecordedClient(record)
+        source = record.source
+    else:
+        client = BedrockConverseClient(region=args.region)
+        source = "bedrock"
+
+    run_id = args.run_id or (f"replay-{record.model_id}" if record else f"run-{model_id}")
+    try:
+        outcome = run_suite(
+            suite,
+            model_id,
+            client,
+            run_id=run_id,
+            source=source,
+            region=args.region or (record.region if record else None),
+            recorded_at=record.recorded_at if record else None,
+        )
+    except (MissingSDK, RunAborted, RecordMismatch) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    for case_id, why in outcome.failures:
+        # Loud, and on stderr: these cases have no response, so the score treats them as
+        # failures. A silent skip would look like a lower score for the wrong reason.
+        print(f"warning: {case_id}: {why}", file=sys.stderr)
+
+    payload = run_to_json(outcome.run)
+    if args.out is not None:
+        write_json(args.out, payload)
+        print(f"run file  {args.out}  ({len(outcome.run.responses)} response(s))")
+    else:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+    if args.record is not None:
+        if record is not None:
+            print("note: --record ignored during a replay", file=sys.stderr)
+        else:
+            write_json(args.record, outcome.record.to_json())
+            print(f"record    {args.record}  ({len(outcome.record.exchanges)} exchange(s))")
+
+    return 1 if outcome.failures else 0
 
 
 def _cmd_validate(paths: Sequence[Path]) -> int:

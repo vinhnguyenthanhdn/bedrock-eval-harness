@@ -26,7 +26,7 @@ exercised against committed fixtures.
 | Comparing two runs case by case (`compare`) | **done** — diffed against committed fixtures |
 | Building the Converse request from a case | **done** — [`docs/converse-request.md`](docs/converse-request.md), pure function, no client |
 | Reading a Converse response into a run record | **done** — exercised through a fake client that returns the SDK's own shapes |
-| Bedrock runner (`beval run`) and recording | next, and the only piece that needs credentials |
+| Bedrock runner (`beval run`), recording and replay | **done** — [`docs/record-format.md`](docs/record-format.md); the call itself is the only part that needs credentials |
 
 There are no benchmark numbers in this README because no model has been called yet.
 When there are, they will come from a recorded run committed to the repo, with the date
@@ -52,6 +52,11 @@ and the price list used.
   stops testing what it claims to test.
 - **Two runs are compared case by case**, not by their totals, because an unchanged score
   can hide a case lost and a case gained.
+- **A run can be replayed without an account.** The record holds the raw request and
+  response for every case, and a replay refuses to answer once the request has changed —
+  so it stays a recording rather than becoming a cache.
+- **`boto3` is not a dependency.** It is imported the moment you ask for a real call, and
+  never otherwise; credentials come from the standard AWS credential chain.
 
 ## Architecture
 
@@ -74,8 +79,9 @@ The suite is the only hand-written input. Everything to its right is derived and
 regenerated, which is what makes two runs comparable: they were produced from the same
 contract, not from two terminal sessions.
 
-The runner box is the only one not implemented yet — see **Status** above. Everything
-downstream of `responses` works today on committed fixtures.
+Every box is implemented. The runner is the only one that needs an AWS account, and only
+to make the call: `beval run --replay` walks the same path against a recorded answer, which
+is how CI exercises it with no credentials and no `boto3` installed.
 
 ## Quick Start
 
@@ -236,10 +242,35 @@ unusable, so it drops straight into CI. Every field and every check type is docu
 in [`docs/case-format.md`](docs/case-format.md), and the run file the scorer reads is
 documented in [`docs/run-format.md`](docs/run-format.md).
 
+### Running it against a model
+
+`beval run` is the only command that talks to AWS, and only when you do not give it a
+record to replay. It needs `boto3` installed and credentials in the standard AWS chain;
+nothing here reads a key from a suite, a run file or a flag.
+
+```bash
+python3 -m beval run suites/support-triage/suite.json \
+  --model anthropic.claude-3-haiku-20240307-v1:0 \
+  --out runs/haiku.json --record runs/haiku-record.json
+```
+
+`--record` keeps the raw request and response for every case, and that record replays with
+no account at all:
+
+```bash
+python3 -m beval run suites/support-triage/suite.json \
+  --replay runs/haiku-record.json --out haiku.json
+```
+
+A replay executes the whole path again — building each request, reading each response,
+writing the run file — and refuses to answer a case whose request has changed since it was
+recorded. See [`docs/record-format.md`](docs/record-format.md).
+
 ## Limitations
 
-- **No model has been called yet.** The runner is not written, and every number in this
-  repository comes from a committed fixture, not from a measurement.
+- **No model has been called yet.** The runner works and is exercised against recorded
+  answers, but every number in this repository comes from a committed fixture rather than
+  from a measurement, and the report says so on every line that could be mistaken for one.
 - **Only machine-decidable checks.** Tone, helpfulness and factual accuracy against an
   open-ended answer are out of reach here by design. If a quality needs a judge model to
   score it, this harness will not score it.
