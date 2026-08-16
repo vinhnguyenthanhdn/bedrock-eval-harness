@@ -25,7 +25,8 @@ exercised against committed fixtures.
 | Scorer, and the cost/latency ledger, on run files | **done** — scored against committed fixtures |
 | Comparing two runs case by case (`compare`) | **done** — diffed against committed fixtures |
 | Building the Converse request from a case | **done** — [`docs/converse-request.md`](docs/converse-request.md), pure function, no client |
-| Bedrock runner and response recording | next, and the only piece that needs credentials |
+| Reading a Converse response into a run record | **done** — exercised through a fake client that returns the SDK's own shapes |
+| Bedrock runner (`beval run`) and recording | next, and the only piece that needs credentials |
 
 There are no benchmark numbers in this README because no model has been called yet.
 When there are, they will come from a recorded run committed to the repo, with the date

@@ -16,6 +16,11 @@ format itself may still change. Any change to it will appear here with the migra
   mapping is documented in [`docs/converse-request.md`](docs/converse-request.md) and read
   from the API reference on 2026-08-16, not from memory. Still no model call: this decides
   what would be sent, and the runner that sends it is not written yet.
+- `beval.client` — the boundary to the SDK, `invoke(model_id, body) -> response`, plus the
+  reader that turns a Converse response into a run-file record and a scripted fake client
+  that returns the shapes the service returns. Reading is strict: a missing `usage` raises
+  instead of defaulting to zero tokens, and a missing `metrics` stays missing rather than
+  becoming a latency of zero.
 
 ## [0.1.0] - 2026-08-16
 

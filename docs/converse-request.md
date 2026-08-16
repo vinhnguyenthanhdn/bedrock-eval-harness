@@ -35,8 +35,8 @@ them, so read the page again before editing this module rather than trusting thi
 
 ## Reading the response
 
-Not implemented yet — it lands with the runner. The paths, from the same page and the
-same date, so the runner is not written from memory either:
+`beval.client.read_response` turns a Converse response into the run-file record for one
+case. The paths come from the same page and the same date:
 
 | Converse response | Run file field |
 |---|---|
@@ -46,7 +46,25 @@ same date, so the runner is not written from memory either:
 | `metrics.latencyMs` | `latency_ms` |
 | `stopReason` | `stop_reason` |
 
-Two traps worth naming before the code exists: the response uses **camelCase**
-(`inputTokens`), while the run file uses snake_case; and `metrics.latencyMs` is the number
-the service reports. Timing the call on the client instead would fold network time into
-every latency comparison between two runs.
+Two traps, both of which now fail a test rather than a bill: the response uses
+**camelCase** (`inputTokens`) while the run file uses snake_case, and `metrics.latencyMs`
+is the number the service reports. Timing the call on the client instead would fold
+network time into every latency comparison between two runs.
+
+Reading is strict. A missing `usage` raises instead of defaulting to zero tokens, because
+a cost report of zero looks like an answer. A missing `metrics` is allowed and stays
+missing: absent latency is not zero latency, and the ledger reports percentiles over the
+responses that carried one.
+
+## The client boundary
+
+`beval.client.ConverseClient` is one method — `invoke(model_id, body) -> response` — with
+the raw Converse shapes on both sides. Below it is `boto3`, which lands with the runner;
+above it everything is pure and runs in CI without credentials.
+
+`ScriptedClient` is the fake used in tests. It answers from a script and records what it
+was asked, so a test can assert the request that went out and the reading of the answer
+that came back. It is not a mock of the harness's own types: it takes and returns exactly
+what the SDK does, which is what makes a green test say something about the Converse
+contract rather than about the fake. `make_converse_response()` builds the responses it
+serves, and lives next to the reader so that renaming a field breaks both sides at once.
