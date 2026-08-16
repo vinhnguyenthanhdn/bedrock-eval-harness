@@ -1,0 +1,12 @@
+{
+  "format_version": 1,
+  "note": "Invented rates for arithmetic in the tests. They are not any vendor's prices.",
+  "source_url": "https://example.invalid/not-a-real-price-list",
+  "read_on": "2026-08-16",
+  "models": {
+    "fixture.model-v1": {
+      "input_per_1k_usd": 3.0,
+      "output_per_1k_usd": 15.0
+    }
+  }
+}

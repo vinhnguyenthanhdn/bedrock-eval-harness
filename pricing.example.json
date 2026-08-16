@@ -1,0 +1,12 @@
+{
+  "format_version": 1,
+  "note": "Copy this file, then fill it in from the Bedrock pricing page for your region. Prices change, so the harness keeps none of its own: it refuses this file until source_url and read_on are real.",
+  "source_url": "REPLACE_ME - the pricing page you read",
+  "read_on": "REPLACE_ME - the date you read it, YYYY-MM-DD",
+  "models": {
+    "your.model-id": {
+      "input_per_1k_usd": 0.0,
+      "output_per_1k_usd": 0.0
+    }
+  }
+}

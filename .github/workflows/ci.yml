@@ -22,6 +22,21 @@ jobs:
       - name: Validate every suite shipped in the repo
         # The CLI is part of the contract, not only the library behind it.
         run: python -m beval validate $(find suites -name '*.json' | sort)
+      - name: Score the fixture run end to end
+        run: |
+          python -m beval score suites/support-triage/suite.json \
+            tests/fixtures/runs/support-triage-fixture.json \
+            --prices tests/fixtures/prices-fixture.json
+      - name: Refuse placeholder prices
+        # The guard only works if it is still wired up; assert the failure, not the success.
+        run: |
+          if python -m beval score suites/support-triage/suite.json \
+               tests/fixtures/runs/support-triage-fixture.json \
+               --prices pricing.example.json; then
+            echo "::error::placeholder price list was accepted"
+            exit 1
+          fi
+          echo "placeholder price list refused, as intended"
 
   guard-secrets:
     runs-on: ubuntu-latest

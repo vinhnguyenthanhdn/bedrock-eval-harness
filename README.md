@@ -14,15 +14,16 @@ settings, scores and cost side by side with the run before it.
 
 ## Status
 
-Early. What exists today is the part everything else is derived from — the case suite
-format, its validator, and a sample suite:
+Early. Everything that does not need an AWS account is in place: the case suite format,
+its validator, and the scorer with its cost and latency ledger, exercised against
+committed fixtures.
 
 | Piece | State |
 |---|---|
 | Case suite format (input + pass criteria) | **done** — [`docs/case-format.md`](docs/case-format.md) |
 | Suite validator and CLI (`validate`, `show`) | **done** |
-| Scorer and cost/latency ledger, on fixtures | next |
-| Bedrock runner and response recording | after that, needs an account with Bedrock enabled |
+| Scorer, and the cost/latency ledger, on run files | **done** — scored against committed fixtures |
+| Bedrock runner and response recording | next, needs an account with Bedrock enabled |
 | Comparing two runs | after that |
 
 There are no benchmark numbers in this README because no model has been called yet.
@@ -39,6 +40,12 @@ and the price list used.
   name, instead of one error per run.
 - **A case with no check is rejected**, because it would add weight to the score while
   measuring nothing.
+- **A case with no response counts as failed**, so a run that crashed halfway cannot look
+  like a good run on a smaller sample.
+- **No prices are built in.** You pass a price list carrying the page it came from and the
+  date you read it; the shipped example is refused until you fill both in.
+- **Fixture runs are labelled as fixtures** in the report, so a hand-written output can
+  never be quoted as a measurement.
 - **Unknown fields are rejected.** A misspelled key in a check is a check that silently
   stops testing what it claims to test.
 
@@ -100,6 +107,38 @@ check types  contains_any=1  json_field_equals=6  max_words=2  not_contains=2  r
 tags         account=1  ambiguous=1  billing=3  policy=1  robustness=1  sales=1  sso=1  technical=1
 ```
 
+Score a run against the suite. The run file shipped here is hand-written output used to
+exercise the scorer, and the report says so:
+
+```bash
+python3 -m beval score suites/support-triage/suite.json \
+                      tests/fixtures/runs/support-triage-fixture.json \
+                      --prices tests/fixtures/prices-fixture.json
+```
+
+```
+suite    support-triage
+run      fixture-hand-written  model=fixture.model-v1
+source   fixture — hand-written output, not a call to a model
+
+pass  refund-past-window             weight 2
+pass  password-reset-loop            weight 1
+pass  seat-count-upgrade             weight 1
+FAIL  sso-domain-transfer            weight 1
+        └ json_field_equals: queue='technical', expected 'account'
+pass  ambiguous-charge-after-cancel  weight 2
+FAIL  prompt-injection-in-ticket     weight 2
+        └ json_field_equals: output is not JSON: Expecting value
+
+score    66.7%  (6/9 weight, 4/6 cases)
+tokens   in 1314  out 139
+latency  p50 700 ms  p95 1180 ms  (from 6/6 responses)
+cost     $6.027000  (prices read 2026-08-16 from https://example.invalid/not-a-real-price-list)
+```
+
+Those token counts, latencies and rates are invented for the arithmetic — see the `note`
+field in both fixture files. Nothing in this repository has been measured yet.
+
 Run the tests the same way CI does:
 
 ```bash
@@ -133,12 +172,13 @@ Write your own suite next to the sample one:
 
 Then `python3 -m beval validate path/to/suite.json`; it exits non-zero if the suite is
 unusable, so it drops straight into CI. Every field and every check type is documented
-in [`docs/case-format.md`](docs/case-format.md).
+in [`docs/case-format.md`](docs/case-format.md), and the run file the scorer reads is
+documented in [`docs/run-format.md`](docs/run-format.md).
 
 ## Limitations
 
-- **No model has been called yet.** The runner, the cost ledger and the comparison step
-  are not written; today this repo validates and describes suites, nothing more.
+- **No model has been called yet.** The runner and the comparison step are not written, and
+  every number in this repository comes from a committed fixture, not from a measurement.
 - **Only machine-decidable checks.** Tone, helpfulness and factual accuracy against an
   open-ended answer are out of reach here by design. If a quality needs a judge model to
   score it, this harness will not score it.
