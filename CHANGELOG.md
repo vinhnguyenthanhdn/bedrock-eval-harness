@@ -9,6 +9,14 @@ format itself may still change. Any change to it will appear here with the migra
 
 ## [Unreleased]
 
+### Added
+
+- `beval.request` — builds the body of a Bedrock Converse call from one case and the
+  suite's `defaults`, as a pure function with no client and no credentials. The field
+  mapping is documented in [`docs/converse-request.md`](docs/converse-request.md) and read
+  from the API reference on 2026-08-16, not from memory. Still no model call: this decides
+  what would be sent, and the runner that sends it is not written yet.
+
 ## [0.1.0] - 2026-08-16
 
 Everything that does not need an AWS account. No model has been called at any point: every
