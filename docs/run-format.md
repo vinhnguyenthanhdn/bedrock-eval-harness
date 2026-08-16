@@ -77,3 +77,10 @@ No price is built into this repository: prices change, and a stale constant beco
 cost report nobody notices. `pricing.example.json` ships with `REPLACE_ME` in both
 provenance fields and is **refused** until you replace them, so placeholder rates cannot
 produce a cost report by accident.
+
+## CI Gating with `--min-score`
+
+To use `beval score` as a gate in CI/CD pipelines, supply `--min-score <percent>` (e.g. `--min-score 85`).
+If the final score falls below the required percentage, `beval score` will print a failure message and exit with code `1`.
+When `--min-score` is not passed, `beval score` exits `0` as long as all cases are answered.
+
