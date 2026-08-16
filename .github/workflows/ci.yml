@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run tests
+        run: python -m unittest discover -s tests -t . -v
+      - name: Validate every suite shipped in the repo
+        # The CLI is part of the contract, not only the library behind it.
+        run: python -m beval validate $(find suites -name '*.json' | sort)
+
+  guard-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse credentials and recorded runs
+        run: |
+          set -euo pipefail
+          # AWS keys, bearer tokens, and anything under runs/ (live output, never committed).
+          if git grep -nIE 'AKIA[0-9A-Z]{16}|aws_secret_access_key[[:space:]]*=|BEGIN [A-Z ]*PRIVATE KEY' -- . ; then
+            echo "::error::credential-shaped string found in the tree"
+            exit 1
+          fi
+          if git ls-files | grep -E '^runs/' ; then
+            echo "::error::runs/ holds live output and must stay out of the repository"
+            exit 1
+          fi
+          echo "clean"
