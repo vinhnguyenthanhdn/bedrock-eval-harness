@@ -12,6 +12,37 @@ Most teams answer both questions from memory, because the previous run was a ter
 scrollback that is gone. This harness makes a run a file: same cases, same request
 settings, scores and cost side by side with the run before it.
 
+## Run it now — no AWS account
+
+Everything except the call to Bedrock runs offline, against fixtures committed to the repo.
+No credentials, no install, no dependencies beyond the Python standard library.
+
+```bash
+git clone https://github.com/vinhnguyenthanhdn/bedrock-eval-harness.git
+cd bedrock-eval-harness
+
+python3 -m beval score suites/support-triage/suite.json \
+                      tests/fixtures/runs/support-triage-fixture.json \
+                      --prices tests/fixtures/prices-fixture.json
+```
+
+The last four lines of the report are the shape of the answer:
+
+```
+score    66.7%  (6/9 weight, 4/6 cases)
+tokens   in 1314  out 139
+latency  p50 700 ms  p95 1180 ms  (from 6/6 responses)
+cost     $6.027000  (prices read 2026-08-16 from https://example.invalid/not-a-real-price-list)
+```
+
+That run file is hand-written rather than measured, and the report says so on its own
+`source` line instead of letting a fixture pass as a measurement. The price list is a
+fixture too, and it has to carry the URL and the date it was read from — the harness
+refuses to score with a placeholder rate.
+
+[Quick Start](#quick-start) has the rest: validating a suite, comparing two runs case by
+case, and recording a real run so it can be replayed later.
+
 ## Status
 
 Early. Everything that does not need an AWS account is in place: the case suite format, its
