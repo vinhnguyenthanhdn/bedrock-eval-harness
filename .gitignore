@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+
+# Real run output. Fixtures live in tests/fixtures/ and are committed on purpose;
+# anything under runs/ came from a live call and is never committed.
+runs/
