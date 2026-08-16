@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>bedrock-eval-harness social preview</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1280px;
+        height: 640px;
+        background: #0b1020;
+        color: #e8ecf8;
+        font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 76px 88px 64px;
+      }
+      .kicker {
+        font-size: 26px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #7f9cff;
+        margin-bottom: 28px;
+      }
+      h1 {
+        font-size: 76px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      }
+      p.lede {
+        margin-top: 26px;
+        font-size: 34px;
+        line-height: 1.35;
+        color: #b9c3dd;
+        max-width: 980px;
+      }
+      .cmds {
+        margin-top: 44px;
+        font-family: "SF Mono", ui-monospace, Menlo, monospace;
+        font-size: 24px;
+        line-height: 1.75;
+        color: #9fe8c0;
+        white-space: nowrap;
+      }
+      .cmds span { color: #5b6785; }
+      footer {
+        margin-top: auto;
+        display: flex;
+        gap: 28px;
+        align-items: center;
+        font-size: 21px;
+        color: #7a86a6;
+        white-space: nowrap;
+      }
+      .pill {
+        border: 2px solid #2b3556;
+        border-radius: 999px;
+        padding: 8px 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="kicker">Amazon Bedrock · evaluation</div>
+    <h1>bedrock-eval-harness</h1>
+    <p class="lede">
+      Keep a fixed set of cases. Answer the two questions you get after changing a model or a
+      prompt: did it get better, and what does it now cost?
+    </p>
+    <div class="cmds">
+      <span>$</span> python3 -m beval validate suites/support-triage/suite.json<br />
+      <span>$</span> python3 -m beval show&nbsp;&nbsp;&nbsp;&nbsp; suites/support-triage/suite.json
+    </div>
+    <footer>
+      <span class="pill">MIT</span>
+      <span class="pill">Python 3.10+, no dependencies</span>
+      <span>github.com/vinhnguyenthanhdn/bedrock-eval-harness</span>
+    </footer>
+  </body>
+</html>
