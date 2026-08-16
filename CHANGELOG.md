@@ -1,0 +1,47 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+While the case format is at `format_version: 1` and this project is below `1.0.0`, the
+format itself may still change. Any change to it will appear here with the migration.
+
+## [Unreleased]
+
+## [0.1.0] - 2026-08-16
+
+Everything that does not need an AWS account. No model has been called at any point: every
+number produced by this release comes from a committed fixture, and the report labels it as
+one.
+
+### Added
+
+- Case suite format, documented in `docs/case-format.md`, with six machine-decidable check
+  types: `contains_all`, `contains_any`, `not_contains`, `regex`, `max_words`, and
+  `json_field_equals`.
+- `beval validate` — reports every problem in a suite at once, with case id and field name,
+  instead of stopping at the first. A case with no checks is refused: it would add weight to
+  the score while measuring nothing.
+- `beval show` — prints what a suite measures, by case, check type and tag.
+- `beval score` — scores a run file against a suite, with a token, latency and cost ledger.
+  `--min-score` gates the exit code on the score, so the command can be used in CI.
+- `beval compare` — diffs two runs of the same suite case by case, leading with the cases
+  that changed verdict rather than the totals. `--fail-on-regression` exits `1` when a case
+  passed in the baseline and fails in the candidate, whatever the score did.
+- Run file format, documented in `docs/run-format.md`. A case with no response counts as
+  failed, so a run that crashed halfway cannot look like a good run on a smaller sample.
+- Price lists supplied by the caller, carrying the page and the date they were read from.
+  No rate is built into the code, and `pricing.example.json` is refused until both
+  provenance fields are filled in.
+- Fixture labelling in the report itself: a run whose source is not `bedrock` is named as
+  hand-written output wherever its numbers appear, including in a comparison against a
+  recorded run.
+
+### Not in this release
+
+- The Bedrock runner. Recording real responses is the next piece, and the only one that
+  needs credentials.
+
+[Unreleased]: https://github.com/vinhnguyenthanhdn/bedrock-eval-harness/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/vinhnguyenthanhdn/bedrock-eval-harness/releases/tag/v0.1.0
