@@ -42,6 +42,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=Path,
         help="price list to turn tokens into dollars; without it the report shows tokens only",
     )
+    p_score.add_argument(
+        "--min-score",
+        type=float,
+        help="minimum score percentage (0..100) required to exit 0",
+    )
 
     args = parser.parse_args(argv)
 
@@ -50,7 +55,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "show":
         return _cmd_show(args.path)
     if args.command == "score":
-        return _cmd_score(args.suite, args.run, args.prices)
+        return _cmd_score(args.suite, args.run, args.prices, args.min_score)
     return 2
 
 
@@ -106,7 +111,19 @@ def _cmd_show(path: Path) -> int:
     return 0
 
 
-def _cmd_score(suite_path: Path, run_path: Path, prices_path: Path | None) -> int:
+def _cmd_score(
+    suite_path: Path,
+    run_path: Path,
+    prices_path: Path | None,
+    min_score: float | None = None,
+) -> int:
+    if min_score is not None and not (0.0 <= min_score <= 100.0):
+        print(
+            f"error: --min-score must be between 0 and 100, got {min_score}",
+            file=sys.stderr,
+        )
+        return 2
+
     suite, problems = load_suite(suite_path)
     if suite is None:
         _print_problems(suite_path, problems)
@@ -181,6 +198,15 @@ def _cmd_score(suite_path: Path, run_path: Path, prices_path: Path | None) -> in
         print(f"cost     no price for model {run.model_id!r} in the price list")
     else:
         print(f"cost     ${cost:.6f}  (prices read {prices.read_on} from {prices.source_url})")
+
+    if min_score is not None:
+        actual_percent = scored.score * 100
+        if actual_percent < min_score:
+            print(
+                f"score {actual_percent:.1f}% is below the required minimum of {min_score:.1f}%",
+                file=sys.stderr,
+            )
+            return 1
 
     return 0 if not scored.missing_case_ids else 1
 

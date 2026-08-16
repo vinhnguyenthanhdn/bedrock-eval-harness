@@ -247,5 +247,55 @@ class SuiteAndRunAgree(unittest.TestCase):
         self.assertTrue(problems)
 
 
+class CliScoreExitCodes(unittest.TestCase):
+    def test_score_without_min_score_exits_zero_even_with_failing_cases(self):
+        import io
+        from contextlib import redirect_stdout, redirect_stderr
+        from beval.cli import main
+
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = main(["score", str(SAMPLE_SUITE), str(FIXTURE_RUN)])
+        self.assertEqual(code, 0)
+
+    def test_score_with_satisfied_min_score_exits_zero(self):
+        import io
+        from contextlib import redirect_stdout, redirect_stderr
+        from beval.cli import main
+
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            # Fixture score is 66.7%, min-score 50% is satisfied
+            code = main(["score", str(SAMPLE_SUITE), str(FIXTURE_RUN), "--min-score", "50"])
+        self.assertEqual(code, 0)
+
+    def test_score_with_unsatisfied_min_score_exits_one(self):
+        import io
+        from contextlib import redirect_stdout, redirect_stderr
+        from beval.cli import main
+
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            # Fixture score is 66.7%, min-score 80% fails
+            code = main(["score", str(SAMPLE_SUITE), str(FIXTURE_RUN), "--min-score", "80"])
+        self.assertEqual(code, 1)
+        self.assertIn("below the required minimum", err.getvalue())
+
+    def test_score_with_invalid_min_score_exits_two(self):
+        import io
+        from contextlib import redirect_stdout, redirect_stderr
+        from beval.cli import main
+
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            # Out of bounds (>100 or <0) returns exit code 2
+            code1 = main(["score", str(SAMPLE_SUITE), str(FIXTURE_RUN), "--min-score", "150"])
+            code2 = main(["score", str(SAMPLE_SUITE), str(FIXTURE_RUN), "--min-score", "-5"])
+        self.assertEqual(code1, 2)
+        self.assertEqual(code2, 2)
+        self.assertIn("must be between 0 and 100", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
+

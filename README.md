@@ -139,6 +139,24 @@ cost     $6.027000  (prices read 2026-08-16 from https://example.invalid/not-a-r
 Those token counts, latencies and rates are invented for the arithmetic — see the `note`
 field in both fixture files. Nothing in this repository has been measured yet.
 
+Without `--min-score`, that command exits `0` — a suite where every case failed still reports
+`score 0.0%` and returns success, which is useless as a CI gate. Pass a threshold to make the
+exit code follow the score:
+
+```bash
+python3 -m beval score suites/support-triage/suite.json \
+                      tests/fixtures/runs/support-triage-fixture.json \
+                      --min-score 80
+```
+
+```
+score 66.7% is below the required minimum of 80.0%
+```
+
+The report still prints in full on stdout; the line above goes to stderr and the command exits
+`1`. A threshold outside `0..100` is a usage error and exits `2` rather than being clamped. A
+case with no response in the run file is still an error on its own, with or without the flag.
+
 Run the tests the same way CI does:
 
 ```bash
