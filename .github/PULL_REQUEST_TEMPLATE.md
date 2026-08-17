@@ -15,6 +15,7 @@
 - [ ] `python3 -m unittest discover -s tests -t .` passes
 - [ ] `python3 -m beval validate $(find suites -name '*.json' | sort)` passes
 - [ ] Checked on a clean clone if this touches fixtures, packaging or `.gitignore`
+- [ ] `CHANGELOG.md` has a line under `## [Unreleased]` when the change is user-visible
 
 ## If this fixes a defect
 
