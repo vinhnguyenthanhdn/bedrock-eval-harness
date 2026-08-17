@@ -54,6 +54,29 @@ These are not style preferences; a PR that breaks one will be asked to change:
    count is printed; a case with no response counts as a failure.
 5. **Validators report every problem at once**, with the field name and the case id.
 
+## Ways to contribute that aren't code
+
+This harness has never called Bedrock. Everything in the repository is a fixture, labelled
+as one, and CI runs without credentials on purpose. That leaves a gap only someone with a
+real account can close:
+
+- **Run it against a real model and say what came back.** Whether `beval run --record`
+  captured the response shape correctly, and whether replay reproduced the score. A record
+  that does not round-trip is the highest-value bug report this project can receive; you do
+  not need to attach the record itself.
+- **Correct a price or a model id**, with the page you read it from and the date. Prices
+  live in the user's price list rather than in the code, so a correction is a documentation
+  change with a source, not a patch.
+- **Report where a validator's message left you guessing.** The validators are meant to
+  name every problem at once, with the field and the case id; a message that did not is a
+  defect even though nothing crashed.
+- **Reproduce an open issue, or report that you could not**, with your Python version.
+- **Review an open pull request** — particularly one adding a check type, where the failing
+  test matters more than the passing one.
+
+`CHANGELOG.md` names the person a change came from, whether that was a report, a
+reproduction, a review or a commit.
+
 ## Adding a check type
 
 1. Add it to `CHECK_SCHEMA` in `beval/checks.py` with its required and optional fields.
