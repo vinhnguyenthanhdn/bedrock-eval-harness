@@ -17,6 +17,12 @@ format itself may still change. Any change to it will appear here with the migra
   repository. `tests/test_public_surface.py` pins the same surface on every push, which is
   the half that also runs on a direct push to `main`.
 
+### Fixed
+
+- `beval.__version__` reports the released version. It had stayed at `0.0.1` through both
+  releases because nothing read it, and `tests/test_version.py` now ties it to the newest
+  release heading in this file so it cannot drift again.
+
 ## [0.2.0] - 2026-08-17
 
 The runner, and still no model call from this project. Every number in the repository comes
