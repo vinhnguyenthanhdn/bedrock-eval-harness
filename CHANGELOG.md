@@ -9,6 +9,14 @@ format itself may still change. Any change to it will appear here with the migra
 
 ## [Unreleased]
 
+### Added
+
+- A `scope-guard` CI job (`scripts/scope_guard.py`): a pull request that removes a public
+  definition from `beval/` fails unless the description names that definition. `beval` is
+  imported as a library as well as run as a CLI, so a removal breaks code outside this
+  repository. `tests/test_public_surface.py` pins the same surface on every push, which is
+  the half that also runs on a direct push to `main`.
+
 ## [0.2.0] - 2026-08-17
 
 The runner, and still no model call from this project. Every number in the repository comes
