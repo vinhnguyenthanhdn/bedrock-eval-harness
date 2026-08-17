@@ -104,7 +104,7 @@ def score_run(suite: Suite, run: Run) -> Scored:
     )
 
 
-def percentile(values, fraction: float) -> float | None:
+def __percentile(values, fraction: float) -> float | None:
     """Nearest-rank percentile. Returns None for an empty sample rather than 0."""
     ordered = sorted(values)
     if not ordered:
