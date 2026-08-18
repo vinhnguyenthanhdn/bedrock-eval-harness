@@ -311,6 +311,29 @@ recorded. See [`docs/record-format.md`](docs/record-format.md).
   cases measures the generator, not the model.
 - **Not an agent framework and not a convenience wrapper** over the Bedrock SDK.
 
+## Where this sits next to the alternatives
+
+Evaluating Bedrock models is not an empty field, and for a lot of work one of these is the
+right answer. Checked against their own docs on 2026-08-18:
+
+| | What it is | Reach for it when |
+|---|---|---|
+| [Amazon Bedrock evaluations](https://docs.aws.amazon.com/bedrock/latest/userguide/evaluation.html) | A managed evaluation job in the console — built-in or custom prompt datasets, a judge model, human workers, and RAG/knowledge-base scoring | You want open-ended quality graded, or you need human raters, and you are happy for the job to live in AWS |
+| [promptfoo](https://www.promptfoo.dev/docs/providers/aws-bedrock/) | A large open-source eval and red-teaming CLI with a web UI and a Bedrock provider, including model-graded assertions | You want breadth: many providers, many assertion types, red teaming, and a UI to read results in |
+| `bedrock-eval-harness` (this repo) | A small suite-and-run format with a scorer, a cost and latency ledger, and run-to-run comparison | You want the run itself to be a file you commit, and you want a score that no model produced |
+
+Three things here are deliberate rather than missing, and they are the reason to pick it:
+
+- **No model grades another model.** Every check is machine-decidable, so a score is
+  reproducible from the run file alone and does not move when a judge model is updated
+  underneath you. The cost of that choice is the whole class of qualities a judge is good at
+  — see [Limitations](#limitations).
+- **Cost and latency are part of the score sheet, not an afterthought.** The price list is
+  an input you supply with the URL and date you read it from, and scoring is refused with a
+  placeholder rate, so a cost figure always says where its rates came from.
+- **A recorded run replays.** The comparison you run months later is against the same
+  requests, not against a screenshot of a terminal.
+
 ## Contributing
 
 Issues and PRs are welcome, including on the format itself while it is still at version 1.

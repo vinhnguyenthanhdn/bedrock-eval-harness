@@ -16,6 +16,10 @@ format itself may still change. Any change to it will appear here with the migra
   imported as a library as well as run as a CLI, so a removal breaks code outside this
   repository. `tests/test_public_surface.py` pins the same surface on every push, which is
   the half that also runs on a direct push to `main`.
+- A `Where this sits next to the alternatives` section in the README, comparing this harness
+  with Amazon Bedrock's own evaluation jobs and with promptfoo, and naming the three choices
+  that are deliberate rather than missing. The README described what the harness does
+  without saying who should use something else instead.
 
 ### Fixed
 
