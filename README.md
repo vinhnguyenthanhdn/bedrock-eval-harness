@@ -285,6 +285,15 @@ python3 -m beval run suites/support-triage/suite.json \
   --out runs/haiku.json --record runs/haiku-record.json
 ```
 
+| Flag | What it decides |
+| --- | --- |
+| `--model` | Model id to call. Required unless `--replay` carries one |
+| `--region` | Which AWS region serves the call, and so which region is billed and which model ids exist at all. Omit it and nothing is passed to the SDK, which then resolves the region itself from the environment or the profile. The value is also written into the run file and the record |
+| `--run-id` | Name recorded inside the run file. `beval score` and `beval compare` print it, so it is how two runs of the same suite are told apart in a report. Defaults to `run-<model-id>`, or `replay-<model-id>` when answering from a record |
+| `--out` | Where to write the run file. Default is stdout |
+| `--record` | Also write the raw requests and responses here, so the run can be replayed |
+| `--replay` | Answer from a record instead of calling the model. Needs no credentials |
+
 `--record` keeps the raw request and response for every case, and that record replays with
 no account at all:
 
