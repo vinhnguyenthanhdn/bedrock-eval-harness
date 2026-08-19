@@ -69,8 +69,8 @@
       prompt: did it get better, and what does it now cost?
     </p>
     <div class="cmds">
-      <span>$</span> python3 -m beval validate suites/support-triage/suite.json<br />
-      <span>$</span> python3 -m beval show&nbsp;&nbsp;&nbsp;&nbsp; suites/support-triage/suite.json
+      <span>$</span> python3 -m beval run&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; suite.json --model &lt;id&gt; --out runs/a.json<br />
+      <span>$</span> python3 -m beval compare suite.json runs/a.json runs/b.json
     </div>
     <footer>
       <span class="pill">MIT</span>
